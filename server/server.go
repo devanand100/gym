@@ -4,32 +4,31 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/devanand100/gym/api"
 	"github.com/devanand100/gym/server/profile"
+	api "github.com/devanand100/gym/server/routes"
+	"github.com/devanand100/gym/store"
 	"github.com/labstack/echo/v4"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Server struct {
 	e *echo.Echo
 
-	// Secret  string
 	Profile *profile.Profile
-	Client  *mongo.Client
+	Store   *store.Store
 }
 
-func NewServer(ctx context.Context, profile *profile.Profile, client *mongo.Client) (*Server, error) {
+func NewServer(ctx context.Context, profile *profile.Profile, store *store.Store) (*Server, error) {
 
 	e := echo.New()
 	e.Debug = true
 
 	s := &Server{
 		e:       e,
-		Client:  client,
+		Store:   store,
 		Profile: profile,
 	}
 
-	apiService := api.NewApiService(profile, client)
+	apiService := api.NewApiService(profile, store)
 
 	rootGroup := e.Group("")
 
