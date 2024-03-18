@@ -8,13 +8,14 @@ import (
 // Store provides database access to all
 type Store struct {
 	Profile *profile.Profile
-	db      *mongo.Client
+	DB      *mongo.Database
 }
 
 // New creates a new instance of Store.
-func New(db *mongo.Client, profile *profile.Profile) *Store {
+func New(db *mongo.Database, profile *profile.Profile) *Store {
+
 	return &Store{
-		db:      db,
+		DB:      db,
 		Profile: profile,
 	}
 }

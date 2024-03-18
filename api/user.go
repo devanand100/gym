@@ -10,7 +10,7 @@ func (s *APIService) RegisterUserRoutes(g *echo.Group) {
 	g.POST("/user/register", s.RegisterUser)
 }
 
-func (*APIService) RegisterUser(c echo.Context) error {
-
+func (s *APIService) RegisterUser(c echo.Context) error {
+	// TODO : send verification mail
 	return c.JSON(http.StatusOK, "pong")
 }

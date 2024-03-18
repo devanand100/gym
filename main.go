@@ -6,11 +6,13 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
+	"github.com/devanand100/gym/db"
 	"github.com/devanand100/gym/server"
 	_profile "github.com/devanand100/gym/server/profile"
 	"github.com/devanand100/gym/store"
-	"github.com/devanand100/gym/store/db"
+
 	"github.com/labstack/gommon/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -28,19 +30,21 @@ var (
 		Short: "Gym managing app",
 		Run: func(_cmd *cobra.Command, _args []string) {
 			ctx, cancel := context.WithCancel(context.Background())
-			Db, dbCtx, dbCancel, err := db.Connect(profile, ctx)
+			dbCtx, dbCancel := context.WithTimeout(ctx, 30*time.Second)
+
+			defer dbCancel()
+
+			DBInstance, err := db.NewDb(ctx, profile)
+
+			defer DBInstance.Close(dbCtx)
 
 			if err != nil {
+				fmt.Println("error in  Database connection")
 				cancel()
-				fmt.Println("Db Connection Error", err)
 				return
-			} else {
-				fmt.Println("Db connected")
 			}
 
-			defer db.Close(Db, dbCtx, dbCancel)
-
-			storeInstance := store.New(Db, profile)
+			storeInstance := store.New(DBInstance.GymDB, profile)
 
 			s, err := server.NewServer(ctx, profile, storeInstance)
 

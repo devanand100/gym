@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	api "github.com/devanand100/gym/api"
 	"github.com/devanand100/gym/server/profile"
-	api "github.com/devanand100/gym/server/routes"
 	"github.com/devanand100/gym/store"
 	"github.com/labstack/echo/v4"
 )
