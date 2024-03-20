@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/devanand100/gym/server/profile"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -34,7 +35,7 @@ func NewDb(ctx context.Context, profile *profile.Profile) (*DB, error) {
 
 // CloseDB closes the database connection and cancels the context.
 func (db *DB) Close(ctx context.Context) error {
-
+	fmt.Println("Database connection Closed")
 	if err := db.client.Disconnect(ctx); err != nil {
 		return err
 	}

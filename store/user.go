@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type RegisterUser struct {
@@ -15,27 +16,31 @@ type RegisterUser struct {
 }
 
 type User struct {
-	ID        string    `bson:"_id,omitempty"`
-	FirstName string    `bson:"firstName"`
-	LastName  string    `bson:"lastName"`
-	Email     string    `bson:"email"`
-	Password  string    `bson:"password"`
-	CreatedAt time.Time `bson:"createdAt"`
-	UpdatedAt time.Time `bson:"updatedAt"`
-	Deleted   bool      `bson:"deleted"`
+	ID          primitive.ObjectID `bson:"_id,omitempty"`
+	FirstName   string             `bson:"firstName"`
+	LastName    string             `bson:"lastName"`
+	Email       string             `bson:"email"`
+	Password    string             `bson:"password"`
+	Permissions []string           `bson:"permissions"`
+	RoleId      primitive.ObjectID `bson:"roleId,omitempty"`
+	CreatedAt   time.Time          `bson:"createdAt"`
+	UpdatedAt   time.Time          `bson:"updatedAt"`
+	Deleted     bool               `bson:"deleted"`
 }
 
 func (s *Store) RegisterUser(ctx context.Context, user *RegisterUser) error {
 	userCollection := s.DB.Collection("user")
 
 	newUser := User{
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		Email:     user.Email,
-		Password:  user.HasPassword,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-		Deleted:   false,
+		FirstName:   user.FirstName,
+		LastName:    user.LastName,
+		Email:       user.Email,
+		Password:    user.HasPassword,
+		CreatedAt:   time.Now(),
+		Permissions: []string{},
+		RoleId:      primitive.NilObjectID,
+		UpdatedAt:   time.Now(),
+		Deleted:     false,
 	}
 
 	_, err := userCollection.InsertOne(ctx, newUser)

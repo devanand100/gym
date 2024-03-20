@@ -1,10 +1,11 @@
 module github.com/devanand100/gym
 
-go 1.22
+go 1.21
 
-toolchain go1.22.1
+toolchain go1.21.1
 
 require (
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/labstack/echo/v4 v4.11.4
 	github.com/labstack/gommon v0.4.2
 	github.com/pkg/errors v0.9.1
