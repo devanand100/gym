@@ -59,7 +59,7 @@ var (
 
 			go func() {
 				sig := <-c
-				fmt.Sprintf("%s received.\n", sig.String())
+				fmt.Printf("%s received.\n", sig.String())
 				s.Shutdown(ctx)
 				cancel()
 			}()

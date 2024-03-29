@@ -2,18 +2,14 @@ package store
 
 import (
 	"context"
+	"errors"
 	"time"
 
+	"github.com/devanand100/gym/dto"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
-
-type RegisterUser struct {
-	FirstName   string
-	LastName    string
-	Email       string
-	HasPassword string
-}
 
 type User struct {
 	ID          primitive.ObjectID `bson:"_id,omitempty"`
@@ -21,6 +17,7 @@ type User struct {
 	LastName    string             `bson:"lastName"`
 	Email       string             `bson:"email"`
 	Password    string             `bson:"password"`
+	UserType    dto.UserType       `bson:"userType"`
 	Permissions []string           `bson:"permissions"`
 	RoleId      primitive.ObjectID `bson:"roleId,omitempty"`
 	CreatedAt   time.Time          `bson:"createdAt"`
@@ -28,7 +25,7 @@ type User struct {
 	Deleted     bool               `bson:"deleted"`
 }
 
-func (s *Store) RegisterUser(ctx context.Context, user *RegisterUser) error {
+func (s *Store) RegisterUser(ctx context.Context, user *dto.RegisterReq) (primitive.ObjectID, error) {
 	userCollection := s.DB.Collection("user")
 
 	newUser := User{
@@ -41,15 +38,22 @@ func (s *Store) RegisterUser(ctx context.Context, user *RegisterUser) error {
 		RoleId:      primitive.NilObjectID,
 		UpdatedAt:   time.Now(),
 		Deleted:     false,
+		UserType:    user.UserType,
 	}
 
-	_, err := userCollection.InsertOne(ctx, newUser)
+	registeredUser, err := userCollection.InsertOne(ctx, newUser)
 
 	if err != nil {
-		return err
+		return primitive.NilObjectID, err
 	}
 
-	return nil
+	InsertedID, ok := registeredUser.InsertedID.(primitive.ObjectID)
+
+	if !ok {
+		return primitive.NilObjectID, errors.New("New Address InsertedID is not ObjectID type")
+	}
+
+	return InsertedID, nil
 
 }
 
@@ -59,6 +63,9 @@ func (s *Store) FindUserByEmail(ctx context.Context, email string) (*User, error
 	var user User
 	err := userCollection.FindOne(ctx, filter).Decode(&user)
 	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
 		return nil, err
 	}
 

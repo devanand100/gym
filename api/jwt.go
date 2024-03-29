@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/devanand100/gym/api/auth"
@@ -27,11 +26,13 @@ func JWTMiddleware(server *APIService, next echo.HandlerFunc, secret string) ech
 			return echo.NewHTTPError(http.StatusUnauthorized, "Missing access token")
 		}
 		claims, err := auth.VerifyToken(cookie.Value)
-		fmt.Println("claims.....", claims)
+
 		if err != nil {
 			return echo.NewHTTPError(http.StatusUnauthorized, "Token expired")
 		}
 		Id := claims["Id"].(string)
+		// server.Store.FindUserById() and set in Context //TODO
+
 		c.Set("UserId", Id)
 
 		return next(c)

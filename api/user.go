@@ -6,11 +6,8 @@ import (
 	"net/http"
 
 	"github.com/devanand100/gym/api/auth"
-	"github.com/devanand100/gym/internal/util"
-	"github.com/devanand100/gym/store"
+	"github.com/devanand100/gym/dto"
 	"github.com/labstack/echo/v4"
-	"github.com/pkg/errors"
-	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -23,7 +20,7 @@ func (s *APIService) RegisterUserRoutes(g *echo.Group) {
 func (s *APIService) RegisterUser(c echo.Context) error {
 	// TODO : send verification mail
 	ctx := c.Request().Context()
-	userRegister := &RegisterReq{}
+	userRegister := &dto.RegisterReq{}
 	if err := json.NewDecoder(c.Request().Body).Decode(userRegister); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Malformed post user request").SetInternal(err)
 	}
@@ -33,7 +30,7 @@ func (s *APIService) RegisterUser(c echo.Context) error {
 
 	user, err := s.Store.FindUserByEmail(ctx, userRegister.Email)
 
-	if err != nil && err != mongo.ErrNoDocuments {
+	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Find user by email error").SetInternal(err)
 	}
 
@@ -47,11 +44,12 @@ func (s *APIService) RegisterUser(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to generate password hash").SetInternal(err)
 	}
 
-	err = s.Store.RegisterUser(ctx, &store.RegisterUser{
+	_, err = s.Store.RegisterUser(ctx, &dto.RegisterReq{
 		FirstName:   userRegister.FirstName,
 		LastName:    userRegister.LastName,
 		Email:       userRegister.Email,
 		HasPassword: string(hashPassword),
+		UserType:    dto.GlobalUserType,
 	})
 
 	if err != nil {
@@ -63,7 +61,7 @@ func (s *APIService) RegisterUser(c echo.Context) error {
 
 func (s *APIService) LoginUser(c echo.Context) error {
 	ctx := c.Request().Context()
-	userLogin := &LoginReq{}
+	userLogin := &dto.LoginReq{}
 
 	if err := json.NewDecoder(c.Request().Body).Decode(userLogin); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Malformed post user request").SetInternal(err)
@@ -115,57 +113,4 @@ func (s *APIService) Me(c echo.Context) error {
 	}
 
 	return c.String(http.StatusOK, "Auth Success")
-}
-
-type RegisterReq struct {
-	FirstName string `json:"firstName" `
-	LastName  string `json:"lastName"`
-	Email     string `json:"email"`
-	Password  string `json:"password"`
-}
-
-type LoginReq struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-func (register RegisterReq) Validate() error {
-	if len(register.Password) < 3 {
-		return errors.New("password is too short, minimum length is 3")
-	}
-	if len(register.Password) > 512 {
-		return errors.New("password is too long, maximum length is 512")
-	}
-	if len(register.FirstName) > 64 {
-		return errors.New("firstName is too long, maximum length is 64")
-	}
-	if len(register.LastName) > 64 {
-		return errors.New("lastName is too long, maximum length is 64")
-	}
-	if register.Email != "" {
-		if len(register.Email) > 256 {
-			return errors.New("email is too long, maximum length is 256")
-		}
-		if !util.ValidateEmail(register.Email) {
-			return errors.New("invalid email format")
-		}
-	}
-
-	return nil
-}
-
-func (login LoginReq) Validate() error {
-
-	if len(login.Email) == 0 {
-		return errors.New("Password is Required")
-	}
-
-	if !util.ValidateEmail(login.Email) {
-		return errors.New("invalid email format")
-	}
-
-	if len(login.Password) == 0 {
-		return errors.New("Password is Required")
-	}
-	return nil
 }
