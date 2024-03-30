@@ -8,10 +8,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/devanand100/gym/db"
 	"github.com/devanand100/gym/server"
 	_profile "github.com/devanand100/gym/server/profile"
 	"github.com/devanand100/gym/store"
+	"github.com/devanand100/gym/store/db"
 
 	"github.com/labstack/gommon/log"
 	"github.com/spf13/cobra"
@@ -30,19 +30,18 @@ var (
 		Short: "Gym managing app",
 		Run: func(_cmd *cobra.Command, _args []string) {
 			ctx, cancel := context.WithCancel(context.Background())
-			dbCtx, dbCancel := context.WithTimeout(ctx, 30*time.Second)
+			dbCtx, dbCancel := context.WithTimeout(ctx, 15*time.Second)
 
 			defer dbCancel()
 
-			DBInstance, err := db.NewDb(ctx, profile)
-
-			defer DBInstance.Close(dbCtx)
+			DBInstance, err := db.NewDb(dbCtx, profile)
 
 			if err != nil {
 				fmt.Println("error in  Database connection")
 				cancel()
 				return
 			}
+			defer DBInstance.Close(dbCtx)
 
 			storeInstance := store.New(DBInstance.GymDB, profile)
 

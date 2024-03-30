@@ -3,8 +3,10 @@ package store
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -46,4 +48,30 @@ func (s Store) CreateAddress(ctx context.Context, address Address) (primitive.Ob
 	}
 
 	return InsertedID, nil
+}
+
+func (s Store) UpdateAddress(ctx context.Context, address Address) error {
+	addressCollection := s.DB.Collection("address")
+
+	filter := bson.M{
+		"_id": address.ID,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"city":          address.City,
+			"streetAddress": address.StreetAddress,
+			"pinCode":       address.PinCode,
+			"country":       address.Country,
+			"updatedAt":     time.Now(),
+		},
+	}
+	updated, err := addressCollection.UpdateOne(ctx, filter, update)
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("updatedAddress------------------>", updated)
+	return nil
 }

@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/devanand100/gym/api/auth"
-	"github.com/devanand100/gym/dto"
+	"github.com/devanand100/gym/internal/dto"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/crypto/bcrypt"
 )

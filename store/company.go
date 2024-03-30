@@ -3,20 +3,30 @@ package store
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
-	"github.com/devanand100/gym/dto"
+	"github.com/devanand100/gym/internal/dto"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
+)
+
+type CompanyStatus string
+
+const (
+	LiveType CompanyStatus = "LIVE"
+	TestType CompanyStatus = "TEST"
 )
 
 type Company struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty"`
 	AddressId primitive.ObjectID `bson:"AddressId,omitempty"`
 
-	CompanyName string `bson:"companyName" `
-	ContactNo   int64  `bson:"contactNo"`
+	CompanyName string        `bson:"companyName" `
+	ContactNo   int64         `bson:"contactNo"`
+	Status      CompanyStatus `bson:"status"`
 
 	//owner Details
 	OwnerFirstName string `bson:"ownerFirstName"`
@@ -46,6 +56,7 @@ func (s Store) CreateCompany(ctx context.Context, company *dto.CompanyCreateReq)
 		OwnerFirstName: company.OwnerFirstName,
 		OwnerLastName:  company.OwnerLastName,
 		OwnerEmail:     company.OwnerEmail,
+		Status:         CompanyStatus(company.Status),
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
 		Deleted:        false,
@@ -101,6 +112,60 @@ func (s Store) CreateCompany(ctx context.Context, company *dto.CompanyCreateReq)
 	}
 
 	return InsertedID, nil
+}
+
+func (s Store) UpdateCompany(ctx context.Context, company *dto.CompanyUpdateReq) error {
+	var err error
+	companyCollection := s.DB.Collection("company")
+
+	err = s.UpdateAddress(ctx, Address{City: company.City, PinCode: company.PinCode, StreetAddress: company.StreetAddress, Country: company.Country, ID: company.AddressId})
+
+	if err != nil {
+		return err
+	}
+
+	filter := bson.M{
+		"_id": company.CompanyIdObjectId,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"companyName": company.CompanyName,
+			"contactNo":   company.ContactNo,
+			"status":      company.Status,
+		},
+	}
+	var companyUpdateResult *mongo.UpdateResult
+	companyUpdateResult, err = companyCollection.UpdateOne(ctx, filter, update)
+
+	if err != nil {
+		return err
+	}
+	fmt.Println("companyUpdateResult...........", companyUpdateResult)
+
+	return nil
+
+}
+
+func (s Store) GetCompanyById(ctx context.Context, companyId primitive.ObjectID) (*Company, error) {
+	var err error
+	companyCollection := s.DB.Collection("company")
+	var companyDoc Company
+
+	if err != nil {
+		fmt.Println("3", err)
+		return nil, err
+	}
+
+	err = companyCollection.FindOne(ctx, bson.M{"_id": companyId}).Decode(&companyDoc)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &companyDoc, nil
 }
 
 type CompanyCreate struct {

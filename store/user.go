@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/devanand100/gym/dto"
+	"github.com/devanand100/gym/internal/dto"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"

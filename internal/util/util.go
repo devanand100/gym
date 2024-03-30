@@ -2,6 +2,7 @@ package util
 
 import (
 	"net/mail"
+	"strconv"
 	"strings"
 )
 
@@ -21,4 +22,13 @@ func HasPrefixes(src string, prefixes ...string) bool {
 		}
 	}
 	return false
+}
+
+// ConvertStringToInt32 converts a string to int32.
+func ConvertStringToInt32(src string) (int32, error) {
+	parsed, err := strconv.ParseInt(src, 10, 32)
+	if err != nil {
+		return 0, err
+	}
+	return int32(parsed), nil
 }

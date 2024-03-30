@@ -4,13 +4,16 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/devanand100/gym/dto"
+	"github.com/devanand100/gym/internal/dto"
+	"github.com/devanand100/gym/store"
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func (s *APIService) RegisterCompanyRoutes(g *echo.Group) {
 	g.POST("/company", s.CreateCompany)
+	g.PUT("/company/:companyId", s.UpdateCompany)
+	g.GET("/company/:companyId", s.GetCompanyById)
 }
 
 func (s *APIService) CreateCompany(c echo.Context) error {
@@ -44,4 +47,67 @@ func (s *APIService) CreateCompany(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, companyId)
+}
+
+func (s *APIService) UpdateCompany(c echo.Context) (err error) {
+	ctx := c.Request().Context()
+
+	companyUpdate := &dto.CompanyUpdateReq{}
+
+	if err := json.NewDecoder(c.Request().Body).Decode(companyUpdate); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Malformed PUT user request").SetInternal(err)
+	}
+	if err := companyUpdate.Validate(); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid company update format").SetInternal(err)
+	}
+
+	companyId := c.Param("companyId")
+
+	var companyIdObjectId primitive.ObjectID
+	companyIdObjectId, err = primitive.ObjectIDFromHex(companyId)
+	companyUpdate.CompanyIdObjectId = companyIdObjectId
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid Company Id").SetInternal(err)
+	}
+	var company *store.Company
+	company, err = s.Store.GetCompanyById(ctx, companyIdObjectId)
+
+	if err != nil {
+		return err
+	}
+
+	if company == nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Company Not Found").SetInternal(err)
+	}
+
+	companyUpdate.AddressId = company.AddressId
+	err = s.Store.UpdateCompany(ctx, companyUpdate)
+
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, "Company Updated Successfully")
+}
+
+func (s *APIService) GetCompanyById(c echo.Context) (err error) {
+
+	ctx := c.Request().Context()
+	companyId := c.Param("companyId")
+
+	var companyIdObjectId primitive.ObjectID
+	companyIdObjectId, err = primitive.ObjectIDFromHex(companyId)
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid Company Id").SetInternal(err)
+	}
+
+	var company *store.Company
+	company, err = s.Store.GetCompanyById(ctx, companyIdObjectId)
+
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, company)
 }
