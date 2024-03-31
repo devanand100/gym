@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -12,6 +11,8 @@ import (
 
 type Address struct {
 	ID            primitive.ObjectID `bson:"_id,omitempty"`
+	CompanyId     primitive.ObjectID `bson:"companyId,omitempty"`
+	GymId         primitive.ObjectID `bson:"gymId,omitempty"`
 	City          string             `bson:"city"`
 	StreetAddress string             `bson:"streetAddress"`
 	PinCode       int64              `bson:"password"`
@@ -72,6 +73,9 @@ func (s Store) UpdateAddress(ctx context.Context, address Address) error {
 		return err
 	}
 
-	fmt.Println("updatedAddress------------------>", updated)
+	if updated == nil {
+		return errors.New("Address not found")
+	}
+
 	return nil
 }

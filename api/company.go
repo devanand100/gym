@@ -11,6 +11,7 @@ import (
 )
 
 func (s *APIService) RegisterCompanyRoutes(g *echo.Group) {
+	g.GET("/company", s.GetCompaniesList)
 	g.POST("/company", s.CreateCompany)
 	g.PUT("/company/:companyId", s.UpdateCompany)
 	g.GET("/company/:companyId", s.GetCompanyById)
@@ -110,4 +111,16 @@ func (s *APIService) GetCompanyById(c echo.Context) (err error) {
 	}
 
 	return c.JSON(http.StatusOK, company)
+}
+
+func (s *APIService) GetCompaniesList(c echo.Context) (err error) {
+	ctx := c.Request().Context()
+
+	companies, err := s.Store.GetCompanyList(ctx)
+
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, companies)
 }

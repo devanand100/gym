@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/devanand100/gym/internal/dto"
@@ -81,7 +80,9 @@ func (s Store) CreateCompany(ctx context.Context, company *dto.CompanyCreateReq)
 	if err != nil {
 		return primitive.NilObjectID, err
 	}
-	_, err = s.CreateCompanyRole(ctx, &CompanyRoleCreate{CompanyId: InsertedID, RoleName: "Manager", Description: "Company User that manages company", Permissions: []string{"manager"}})
+
+	_, err = s.CreateCompanyRole(ctx, &CompanyRoleCreate{CompanyId: InsertedID, RoleName: "Trainer", Description: "Gym Trainers", Permissions: []string{"trainer"}})
+
 	if err != nil {
 		return primitive.NilObjectID, err
 	}
@@ -135,13 +136,12 @@ func (s Store) UpdateCompany(ctx context.Context, company *dto.CompanyUpdateReq)
 			"status":      company.Status,
 		},
 	}
-	var companyUpdateResult *mongo.UpdateResult
-	companyUpdateResult, err = companyCollection.UpdateOne(ctx, filter, update)
+
+	_, err = companyCollection.UpdateOne(ctx, filter, update)
 
 	if err != nil {
 		return err
 	}
-	fmt.Println("companyUpdateResult...........", companyUpdateResult)
 
 	return nil
 
@@ -151,11 +151,6 @@ func (s Store) GetCompanyById(ctx context.Context, companyId primitive.ObjectID)
 	var err error
 	companyCollection := s.DB.Collection("company")
 	var companyDoc Company
-
-	if err != nil {
-		fmt.Println("3", err)
-		return nil, err
-	}
 
 	err = companyCollection.FindOne(ctx, bson.M{"_id": companyId}).Decode(&companyDoc)
 	if err != nil {
@@ -168,15 +163,25 @@ func (s Store) GetCompanyById(ctx context.Context, companyId primitive.ObjectID)
 	return &companyDoc, nil
 }
 
-type CompanyCreate struct {
-	CompanyName   string `json:"companyName" `
-	City          string `json:"city"`
-	StreetAddress string `json:"streetAddress"`
-	PinCode       int64  `json:"pinCode"`
-	Country       string `json:"country"`
-	// country code of mobile no
-	ContactNo      int64  `json:"contactNo"`
-	OwnerFirstName string `json:"ownerFirstName"`
-	OwnerLastName  string `json:"ownerLastName"`
-	OwnerEmail     string `json:"ownerEmail"`
+func (s Store) GetCompanyList(ctx context.Context) (companies []*Company, err error) {
+	companyCollection := s.DB.Collection("company")
+
+	var cursor *mongo.Cursor
+	cursor, err = companyCollection.Find(ctx, bson.D{})
+	if err != nil {
+		return nil, err
+	}
+
+	defer cursor.Close(ctx)
+
+	if cursor.Next(ctx) {
+		var company Company
+		err = cursor.Decode(&company)
+		if err != nil {
+			return nil, err
+		}
+		companies = append(companies, &company)
+	}
+
+	return
 }

@@ -28,4 +28,5 @@ func (s *APIService) Register(rootGroup *echo.Group) {
 	s.RegisterSystemRoutes(apiGroup)
 	s.RegisterUserRoutes(apiGroup)
 	s.RegisterCompanyRoutes(apiGroup)
+	s.RegisterGymRoutes(apiGroup)
 }
